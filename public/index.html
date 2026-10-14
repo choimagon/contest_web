@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#eeece8">
-  <meta name="description" content="IMEL 팀 이름과 Python 파일 제출. 파일 원문은 비공개로 보관됩니다.">
-  <title>IMEL — 팀 파일 제출</title>
+  <meta name="theme-color" content="#fffaf3">
+  <meta name="description" content="IMEL 개인 대회 제출. 이름과 Python 파일을 제출하세요. 파일 원문은 비공개로 보관됩니다.">
+  <title>IMEL — 대회 제출</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
   <script src="/config.js"></script>
@@ -19,10 +19,10 @@
     <div id="connection-notice" class="notice" role="status" hidden><span data-icon="info"></span><span id="notice-text"></span><button id="notice-action" type="button">다시 시도</button></div>
     <div class="workspace">
       <section class="upload-panel" aria-labelledby="upload-heading">
-        <h2 id="upload-heading">제출칸</h2>
+        <h2 id="upload-heading">대회 제출</h2>
         <form id="upload-form">
-          <label class="field-label" for="team-name">팀 이름 <span>*</span></label>
-          <input id="team-name" name="team_name" maxlength="80" required placeholder="팀 이름 입력" autocomplete="organization">
+          <label class="field-label" for="submitter-name">이름 <span>*</span></label>
+          <input id="submitter-name" name="name" maxlength="80" required placeholder="이름 입력" autocomplete="name">
           <div class="file-field-heading"><label class="field-label" for="file-input">파일 이름 <span>*</span></label><span>.py · 최대 5 MB</span></div>
           <div id="drop-zone" class="drop-zone">
             <input id="file-input" type="file" accept=".py" hidden>
@@ -39,10 +39,10 @@
       </section>
       <section class="list-panel" aria-labelledby="list-heading">
         <h2 id="list-heading">제출목록 <span id="list-count">0</span></h2>
-        <div class="list-tools"><label class="search-box"><span data-icon="search"></span><input id="search-input" type="search" aria-label="팀 이름 또는 파일명 검색" placeholder="팀 이름 또는 파일명 검색"></label><button class="icon-button" id="refresh-list" type="button" aria-label="제출 목록 새로고침" title="새로고침" data-icon="refresh"></button></div>
+        <div class="list-tools"><label class="search-box"><span data-icon="search"></span><input id="search-input" type="search" aria-label="이름 또는 파일명 검색" placeholder="이름 또는 파일명 검색"></label><button class="icon-button" id="refresh-list" type="button" aria-label="제출 목록 새로고침" title="새로고침" data-icon="refresh"></button></div>
         <div class="table-container">
-          <table><thead><tr><th scope="col">팀 이름</th><th scope="col">파일 이름</th><th scope="col" title="한국 시간 (UTC+9)">시간<span class="column-detail">(초까지)</span></th><th scope="col">결과</th></tr></thead><tbody id="submissions-body"></tbody></table>
-          <div class="empty-state" id="empty-state"><h3 id="empty-title">아직 제출된 파일이 없습니다.</h3><p id="empty-description">팀 이름과 .py 파일을 제출해주세요.</p></div>
+          <table><thead><tr><th scope="col">이름</th><th scope="col">파일 이름</th><th scope="col" title="한국 시간 (UTC+9)">시간</th><th scope="col">결과</th></tr></thead><tbody id="submissions-body"></tbody></table>
+          <div class="empty-state" id="empty-state"><h3 id="empty-title">아직 제출된 파일이 없습니다.</h3><p id="empty-description">이름과 .py 파일을 제출해주세요.</p></div>
         </div>
         <div class="list-footer"><span id="list-footer-count">총 0개 파일</span><span>시간은 한국 시간 기준</span></div>
       </section>

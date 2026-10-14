@@ -24,9 +24,9 @@ export function validateFile(file) {
   if(!Number.isSafeInteger(file.size) || file.size < 0 || file.size > MAX_FILE_SIZE) throw new Error('파일 크기는 최대 5 MB입니다.');
   return file;
 }
-export function validateTeam(name) {
+export function validateName(name) {
   name = String(name || '').trim();
-  if(!name || name.length > 80 || name.includes('\0')) throw new Error('팀 이름을 1~80자로 입력해주세요.');
+  if(!name || name.length > 80 || name.includes('\0')) throw new Error('이름을 1~80자로 입력해주세요.');
   return name;
 }
 export const isMissingFile = error => String(error?.message).includes('PYROOM_FILE_NOT_FOUND');
@@ -82,7 +82,7 @@ export class SubmissionRepository {
     if(!raw) return null;
     const receipt = JSON.parse(raw);
     if(!UUID.test(receipt.id) || !UUID.test(receipt.upload_token)) throw new Error('제출 복구 정보를 확인해주세요.');
-    validateTeam(receipt.team_name);
+    validateName(receipt.team_name);
     validateFile({name:receipt.file_name,size:receipt.file_size});
     return receipt;
   }
@@ -93,11 +93,11 @@ export class SubmissionRepository {
     this.clearPending();
     return data;
   }
-  async submit(teamName, file, onStage) {
+  async submit(name, file, onStage) {
     validateFile(file);
-    teamName = validateTeam(teamName);
+    name = validateName(name);
     if(this.getPending()) throw new Error('이전 제출의 목록 등록을 먼저 완료해주세요.');
-    const receipt = {id:crypto.randomUUID(),upload_token:crypto.randomUUID(),team_name:teamName,file_name:file.name,file_size:file.size};
+    const receipt = {id:crypto.randomUUID(),upload_token:crypto.randomUUID(),team_name:name,file_name:file.name,file_size:file.size};
     // Only recovery metadata is stored locally. The file body is never read or cached here.
     localStorage.setItem(this.pendingKey,JSON.stringify(receipt));
     onStage?.('upload');

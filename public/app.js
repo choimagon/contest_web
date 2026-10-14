@@ -1,4 +1,4 @@
-import {SubmissionRepository,validateFile,validateTeam,readableError,isMissingFile} from './store.js';
+import {SubmissionRepository,validateFile,validateName,readableError,isMissingFile} from './store.js';
 const $ = id => document.getElementById(id);
 const paths = {
   'code-file':'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6m-10 4-3 3 3 3m4-6 3 3-3 3"/>',
@@ -29,7 +29,7 @@ function renderActions() {
   $('notice-action').disabled = busy;
   $('submit-button').disabled = busy || Boolean(state.pending) || !state.repository;
   $('submit-label').textContent = state.busy ? '제출 중…' : state.pending ? '목록 등록 대기' : '제출하기';
-  $('team-name').readOnly = busy || Boolean(state.pending);
+  $('submitter-name').readOnly = busy || Boolean(state.pending);
   ['choose-file','change-file','remove-file'].forEach(id => {$(id).disabled = busy || Boolean(state.pending);});
   $('drop-zone').classList.toggle('busy',busy || Boolean(state.pending));
   $('retry-submission').disabled = busy;
@@ -44,7 +44,7 @@ function renderFile() {
   $('pending-receipt').hidden = !state.pending;
   if(state.pending) {
     $('pending-description').textContent = `${state.pending.team_name} · ${state.pending.file_name}\n파일 보관과 목록 등록 상태를 다시 확인할 수 있습니다.`;
-    $('team-name').value = state.pending.team_name;
+    $('submitter-name').value = state.pending.team_name;
   }
 }
 function renderList() {
@@ -55,11 +55,11 @@ function renderList() {
   const date = new Intl.DateTimeFormat('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23',timeZone:'Asia/Seoul'});
   $('submissions-body').innerHTML = rows.map(row => {
     const parts = Object.fromEntries(date.formatToParts(new Date(row.created_at)).map(part=>[part.type,part.value]));
-    return `<tr data-submission-id="${escape(row.id)}"><td><span class="team-name" title="${escape(row.team_name)}">${escape(row.team_name)}</span></td><td><span class="file-name" title="${escape(row.file_name)}">${escape(row.file_name)}</span></td><td><time datetime="${escape(row.created_at)}"><span class="submission-date">${parts.year}.${parts.month}.${parts.day}</span><span>${parts.hour}:${parts.minute}:${parts.second}</span></time></td><td><span class="result-placeholder" aria-label="결과 미등록">X</span></td></tr>`;
+    return `<tr data-submission-id="${escape(row.id)}"><td><span class="submission-name" title="${escape(row.team_name)}">${escape(row.team_name)}</span></td><td><span class="file-name" title="${escape(row.file_name)}">${escape(row.file_name)}</span></td><td><time datetime="${escape(row.created_at)}"><span class="submission-date">${parts.year}.${parts.month}.${parts.day}</span><span>${parts.hour}:${parts.minute}:${parts.second}</span></time></td><td><span class="result-placeholder" aria-label="결과 미등록">X</span></td></tr>`;
   }).join('');
   $('empty-state').hidden = rows.length > 0;
   $('empty-title').textContent = state.loading ? '제출 목록을 불러오는 중이에요' : query ? '검색된 제출이 없어요' : '아직 제출된 파일이 없습니다.';
-  $('empty-description').textContent = query ? '다른 팀 이름이나 파일명으로 검색해보세요.' : '팀 이름과 .py 파일을 제출해주세요.';
+  $('empty-description').textContent = query ? '다른 이름이나 파일명으로 검색해보세요.' : '이름과 .py 파일을 제출해주세요.';
 }
 function render() {renderActions();renderFile();renderList();}
 async function boot() {
@@ -97,17 +97,17 @@ function savedSubmission(record) {
   state.rows = [metadata,...state.rows.filter(row=>row.id !== record.id)];
   state.query = '';$('search-input').value = '';
   state.pending = null;state.file = null;
-  $('file-input').value = '';$('team-name').value = '';$('upload-error').hidden = true;
-  render();toast('팀의 Python 파일을 등록했어요.');
+  $('file-input').value = '';$('submitter-name').value = '';$('upload-error').hidden = true;
+  render();toast('대회 제출을 완료했어요.');
 }
 $('upload-form').addEventListener('submit',async event=>{
   event.preventDefault();
   if(state.busy || state.loading) return;
   if(!state.repository) return;
-  try {validateTeam($('team-name').value);validateFile(state.file);} catch(error) {$('upload-error').textContent = readableError(error);$('upload-error').hidden = false;return;}
+  try {validateName($('submitter-name').value);validateFile(state.file);} catch(error) {$('upload-error').textContent = readableError(error);$('upload-error').hidden = false;return;}
   setBusy(true);$('upload-error').hidden = true;$('upload-progress').hidden = false;
   try {
-    const record = await state.repository.submit($('team-name').value,state.file,stage=>{$('upload-progress-label').textContent = stage === 'upload' ? '파일을 비공개 저장소에 보관하는 중…' : '팀 이름과 파일명을 목록에 등록하는 중…';});
+    const record = await state.repository.submit($('submitter-name').value,state.file,stage=>{$('upload-progress-label').textContent = stage === 'upload' ? '파일을 비공개 저장소에 보관하는 중…' : '이름과 파일명을 목록에 등록하는 중…';});
     savedSubmission(record);
   } catch(error) {
     try {state.pending = state.repository.getPending();} catch {}
