@@ -1,0 +1,68 @@
+Pyroom — 팀 이름과 Python 파일 제출
+
+기능
+  팀 이름 입력, .py 파일 선택/드래그앤드롭, 제출, 제출 목록, 이름 검색, 새로고침.
+  목록은 팀 이름과 파일명, 제출일을 표시합니다.
+  웹은 파일 내용을 읽거나 분석·미리보기·실행·다운로드하지 않습니다.
+  허용된 이메일 계정으로 로그인한 사람만 제출하고 목록을 조회할 수 있습니다.
+
+실행
+  npm run dev
+  http://localhost:5173
+
+Vercel
+  GitHub 저장소를 Import하고 Root Directory를 저장소 루트로 지정합니다.
+  vercel.json: Framework Other / Build npm run build / Output dist
+  별도 npm 의존성을 설치할 필요가 없습니다.
+  전달받은 Supabase URL과 Publishable 공개 키가 supabase/public-config.json에 있습니다.
+  Vercel의 SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY 환경 변수로 덮어쓸 수 있습니다.
+  비밀 키나 service_role 키는 프런트엔드 및 이 저장소에 넣지 않습니다.
+
+Supabase
+  supabase/schema.sql: 제출 테이블, 비공개 파일 버킷, 접근 권한, 제출 등록 RPC.
+  초기 허용 이메일: magon8696@naver.com
+  계정은 웹의 계정 만들기에서 비밀번호를 직접 정하고 이메일 인증 후 로그인합니다.
+  이메일 발송 설정이 제한되면 Supabase Authentication > Users > Add User에서
+  해당 이메일 계정을 만들고 Auto Confirm User를 활성화합니다.
+  메일 확인 후 돌아올 주소는 Authentication > URL Configuration에서
+  배포된 Vercel URL을 Site URL / Redirect URLs에 등록하면 됩니다.
+
+저장 구조 — 나중에 만들 라이브러리용
+  Postgres public.team_submissions:
+    id              UUID, 제출 ID
+    team_name       팀 이름
+    file_name       업로드한 원래 .py 파일명
+    file_size       파일 크기(바이트), Storage 메타데이터에서 확인한 값
+    storage_bucket  team-python-files
+    storage_path    <사용자 UUID>/<제출 UUID>.py
+    submitted_by    업로드한 Supabase Auth 사용자 UUID
+    created_at      제출 시간
+
+  파일 자체는 Supabase Storage의 비공개 team-python-files 버킷에 보관됩니다.
+  라이브러리는 서버에서 승인된 관리자 권한으로 team_submissions를 조회하고,
+  storage_bucket + storage_path를 사용해 원본 파일을 가져올 수 있습니다.
+  브라우저의 인증 계정에는 해당 버킷의 파일 읽기 권한도 부여하지 않습니다.
+  라이브러리 코드는 이번 웹 프로젝트에 포함하지 않았습니다.
+
+제출 동작
+  .py 파일 한 개, 최대 5 MB. 파일 내용과 인코딩은 검사하지 않습니다.
+  빈 Python 파일(0바이트)도 제출할 수 있습니다.
+  동일한 팀 이름 또는 파일명으로 여러 번 제출할 수 있으며 각각 별도 제출 ID로 저장합니다.
+  파일 바이트를 Storage API로 전달한 뒤, 등록 RPC가 객체 존재와 소유자를 확인합니다.
+  DB에는 파일 내용 없이 팀 이름과 파일 메타데이터만 저장합니다.
+  업로드와 목록 등록 사이에 연결이 끊기면 복구 정보(이름·ID·크기만)를 브라우저에 남깁니다.
+  '목록 등록 다시 시도'로 같은 제출을 재등록하며 중복 레코드를 만들지 않습니다.
+
+접근 제어
+  submission_private.allowed_emails는 브라우저에서 읽거나 수정할 수 없습니다.
+  허용 이메일 추가/제거는 SQL Editor에서 관리자만 수행합니다.
+    추가: insert into submission_private.allowed_emails(email) values ('허용이메일') on conflict do nothing;
+    제거: delete from submission_private.allowed_emails where email = '제거이메일';
+  인증되지 않은 사용자 및 미허용 계정의 업로드·조회·등록을 차단합니다.
+  파일은 브라우저에서 읽기·수정·삭제할 수 없습니다. 다른 버킷의 권한에는 영향을 주지 않습니다.
+
+구현
+  HTML, CSS, JavaScript / 공식 Supabase JS SDK 2.117.3 / Node.js 20 이상.
+  Supabase 라이브러리 및 라이선스: public/vendor
+  Vercel: https://vercel.com/docs/project-configuration/vercel-json
+  Storage: https://supabase.com/docs/guides/storage/security/access-control
