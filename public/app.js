@@ -54,8 +54,9 @@ function renderList() {
   $('list-footer-count').textContent = `총 ${state.rows.length}개 파일${query ? ` · 검색 결과 ${rows.length}개` : ''}`;
   const date = new Intl.DateTimeFormat('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23',timeZone:'Asia/Seoul'});
   $('submissions-body').innerHTML = rows.map(row => {
+    const result = String(row.result ?? 'X');
     const parts = Object.fromEntries(date.formatToParts(new Date(row.created_at)).map(part=>[part.type,part.value]));
-    return `<tr data-submission-id="${escape(row.id)}"><td><span class="submission-name" title="${escape(row.team_name)}">${escape(row.team_name)}</span></td><td><span class="file-name" title="${escape(row.file_name)}">${escape(row.file_name)}</span></td><td><time datetime="${escape(row.created_at)}"><span class="submission-date">${parts.year}.${parts.month}.${parts.day}</span><span>${parts.hour}:${parts.minute}:${parts.second}</span></time></td><td><span class="result-placeholder" aria-label="결과 미등록">X</span></td></tr>`;
+    return `<tr data-submission-id="${escape(row.id)}"><td><span class="submission-name" title="${escape(row.team_name)}">${escape(row.team_name)}</span></td><td><span class="file-name" title="${escape(row.file_name)}">${escape(row.file_name)}</span></td><td><time datetime="${escape(row.created_at)}"><span class="submission-date">${parts.year}.${parts.month}.${parts.day}</span><span>${parts.hour}:${parts.minute}:${parts.second}</span></time></td><td><span class="${result === 'X' ? 'result-placeholder' : 'submission-result'}" aria-label="${result === 'X' ? '결과 미등록' : '제출 결과'}">${escape(result)}</span></td></tr>`;
   }).join('');
   $('empty-state').hidden = rows.length > 0;
   $('empty-title').textContent = state.loading ? '제출 목록을 불러오는 중이에요' : query ? '검색된 제출이 없어요' : '아직 제출된 파일이 없습니다.';
@@ -93,7 +94,7 @@ $('drop-zone').addEventListener('drop',event=>{event.preventDefault();$('drop-zo
 document.addEventListener('dragover',event=>event.preventDefault());
 document.addEventListener('drop',event=>event.preventDefault());
 function savedSubmission(record) {
-  const metadata = {id:record.id,team_name:record.team_name,file_name:record.file_name,file_size:record.file_size,created_at:record.created_at};
+  const metadata = {id:record.id,team_name:record.team_name,file_name:record.file_name,file_size:record.file_size,created_at:record.created_at,result:record.result ?? 'X'};
   state.rows = [metadata,...state.rows.filter(row=>row.id !== record.id)];
   state.query = '';$('search-input').value = '';
   state.pending = null;state.file = null;

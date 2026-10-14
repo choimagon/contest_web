@@ -36,9 +36,12 @@ create table if not exists public.team_submissions (
   file_size bigint not null check (file_size between 0 and 5242880),
   storage_bucket text not null default 'team-python-files' check (storage_bucket = 'team-python-files'),
   storage_path text not null unique,
+  result text not null default 'X' check (char_length(result) between 1 and 1024 and result = btrim(result)),
   submitted_by uuid references auth.users(id),
   created_at timestamptz not null default now()
 );
+alter table public.team_submissions add column if not exists result text not null default 'X' check (char_length(result) between 1 and 1024 and result = btrim(result));
+create index if not exists team_submissions_pending_idx on public.team_submissions(created_at, id) where result = 'X';
 -- Preserve existing authenticated submissions while allowing public submissions.
 alter table public.team_submissions alter column submitted_by drop not null;
 alter table public.team_submissions drop constraint if exists team_submissions_check;
@@ -144,11 +147,15 @@ $$;
 revoke execute on function public.register_team_submission(uuid, text, text) from public, anon;
 grant execute on function public.register_team_submission(uuid, text, text) to authenticated;
 
+-- Recreate the RPC return types atomically when adding the result field.
+drop function if exists public.list_public_team_submissions(integer, integer);
+drop function if exists public.register_public_team_submission(uuid, uuid, text, text);
+
 -- The public API exposes only display metadata, never Storage paths or upload tokens.
 create or replace function public.list_public_team_submissions(p_offset integer default 0, p_limit integer default 500)
-returns table (id uuid, team_name text, file_name text, file_size bigint, created_at timestamptz)
+returns table (id uuid, team_name text, file_name text, file_size bigint, created_at timestamptz, result text)
 language sql stable security definer set search_path = '' as $$
-  select s.id, s.team_name, s.file_name, s.file_size, s.created_at
+  select s.id, s.team_name, s.file_name, s.file_size, s.created_at, s.result
   from public.team_submissions s
   order by s.created_at desc, s.id
   limit least(greatest(coalesce(p_limit, 500), 0), 500)
@@ -158,7 +165,7 @@ revoke execute on function public.list_public_team_submissions(integer, integer)
 grant execute on function public.list_public_team_submissions(integer, integer) to anon, authenticated;
 
 create or replace function public.register_public_team_submission(p_id uuid, p_upload_token uuid, p_team_name text, p_file_name text)
-returns table (id uuid, team_name text, file_name text, file_size bigint, created_at timestamptz)
+returns table (id uuid, team_name text, file_name text, file_size bigint, created_at timestamptz, result text)
 language plpgsql security definer set search_path = '' as $$
 declare
   object_path text;
@@ -194,7 +201,7 @@ begin
   if saved.team_name <> btrim(p_team_name) or saved.file_name <> p_file_name then
     raise exception 'PYROOM_SUBMISSION_CONFLICT' using errcode = '22023';
   end if;
-  return query select saved.id, saved.team_name, saved.file_name, saved.file_size, saved.created_at;
+  return query select saved.id, saved.team_name, saved.file_name, saved.file_size, saved.created_at, saved.result;
 end;
 $$;
 revoke execute on function public.register_public_team_submission(uuid, uuid, text, text) from public;
