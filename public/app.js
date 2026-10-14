@@ -1,4 +1,4 @@
-import {SubmissionRepository,validateFile,validateTeam,readableError,isMissingFile,isAccessError} from './store.js';
+import {SubmissionRepository,validateFile,validateTeam,readableError,isMissingFile} from './store.js';
 const $ = id => document.getElementById(id);
 const paths = {
   'code-file':'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6m-10 4-3 3 3 3m4-6 3 3-3 3"/>',
@@ -37,12 +37,10 @@ function notice(message) {$('connection-notice').hidden = !message;$('notice-tex
 function renderActions() {
   const busy = state.busy || state.loading;
   $('status-pill').classList.toggle('connected',Boolean(state.repository));
-  $('status-pill').innerHTML = `<i></i>${state.loading ? '연결 중' : state.repository ? 'Supabase 연결됨' : '로그인 필요'}`;
-  $('account-label').textContent = state.repository ? '내 계정' : '로그인';
-  $('account-button').disabled = busy;
-  $('submit-button').disabled = busy || Boolean(state.pending);
-  $('submit-button').formNoValidate = !state.repository;
-  $('submit-label').textContent = state.busy ? '제출 중…' : state.pending ? '목록 등록 대기' : state.repository ? '제출하기' : '로그인 후 제출';
+  $('status-pill').innerHTML = `<i></i>${state.loading ? '연결 중' : state.repository ? 'Supabase 연결됨' : '연결 확인 필요'}`;
+  $('notice-action').disabled = busy;
+  $('submit-button').disabled = busy || Boolean(state.pending) || !state.repository;
+  $('submit-label').textContent = state.busy ? '제출 중…' : state.pending ? '목록 등록 대기' : '제출하기';
   $('team-name').readOnly = busy || Boolean(state.pending);
   ['choose-file','change-file','remove-file'].forEach(id => {$(id).disabled = busy || Boolean(state.pending);});
   $('drop-zone').classList.toggle('busy',busy || Boolean(state.pending));
@@ -77,7 +75,7 @@ function renderList() {
   }).join('');
   $('empty-state').hidden = rows.length > 0;
   $('empty-title').textContent = state.loading ? '제출 목록을 불러오는 중이에요' : query ? '검색된 제출이 없어요' : '팀의 첫 번째 제출을 기다려요';
-  $('empty-description').textContent = query ? '다른 팀 이름이나 파일명으로 검색해보세요.' : state.repository ? '왼쪽에서 팀 이름과 .py 파일을 등록해보세요.' : '로그인하고 팀 이름과 .py 파일을 등록해보세요.';
+  $('empty-description').textContent = query ? '다른 팀 이름이나 파일명으로 검색해보세요.' : '왼쪽에서 팀 이름과 .py 파일을 등록해보세요.';
 }
 function render() {renderActions();renderFile();renderList();}
 async function boot() {
@@ -121,7 +119,7 @@ function savedSubmission(record) {
 $('upload-form').addEventListener('submit',async event=>{
   event.preventDefault();
   if(state.busy || state.loading) return;
-  if(!state.repository) {openAuth();return;}
+  if(!state.repository) return;
   try {validateTeam($('team-name').value);validateFile(state.file);} catch(error) {$('upload-error').textContent = readableError(error);$('upload-error').hidden = false;return;}
   setBusy(true);$('upload-error').hidden = true;$('upload-progress').hidden = false;
   try {
@@ -130,18 +128,16 @@ $('upload-form').addEventListener('submit',async event=>{
   } catch(error) {
     try {state.pending = state.repository.getPending();} catch {}
     $('upload-error').textContent = readableError(error) + (state.pending ? ' 아래 버튼으로 제출 상태를 확인해주세요.' : '');$('upload-error').hidden = false;
-    if(isAccessError(error)) {state.repository = null;state.rows = [];notice('접근 권한을 확인하고 다시 로그인해주세요.');}
   } finally {setBusy(false);$('upload-progress').hidden = true;render();}
 });
 $('retry-submission').addEventListener('click',async()=>{
   if(state.busy || !state.pending) return;
-  if(!state.repository) {openAuth();return;}
+  if(!state.repository) return;
   setBusy(true);$('upload-error').hidden = true;
   try {savedSubmission(await state.repository.registerReceipt(state.pending));}
   catch(error) {
     if(isMissingFile(error)) {state.repository.clearPending();state.pending = null;state.file = null;$('file-input').value = '';}
     $('upload-error').textContent = readableError(error);$('upload-error').hidden = false;
-    if(isAccessError(error)) {state.repository = null;state.rows = [];notice('접근 권한을 확인하고 다시 로그인해주세요.');}
   } finally {setBusy(false);render();}
 });
 $('search-input').addEventListener('input',event=>{state.query = event.target.value;renderList();});
@@ -149,58 +145,9 @@ $('refresh-list').addEventListener('click',async()=>{
   if(state.busy || !state.repository) return;
   setBusy(true);
   try {state.rows = await state.repository.list();notice('');toast('제출 목록을 새로 불러왔어요.');}
-  catch(error) {notice(readableError(error));if(isAccessError(error)){state.repository = null;state.rows = [];}}
+  catch(error) {notice(readableError(error));}
   finally {setBusy(false);render();}
 });
-function openAuth() {
-  if(state.busy || state.loading) return;
-  const connected = Boolean(state.repository);
-  $('auth-heading').textContent = connected ? '나의 제출 계정' : '팀의 제출 공간에 로그인';
-  $('auth-intro').innerHTML = connected ? '이 계정으로 Python 파일을 제출하고<br>등록된 팀과 파일명을 확인할 수 있습니다.' : '허용된 이메일 계정으로 로그인하면<br>파일 제출과 목록 확인을 할 수 있습니다.';
-  $('auth-form').hidden = connected;
-  $('account-info').hidden = !connected;
-  $('account-info').textContent = state.repository?.email || '';
-  $('signout-button').hidden = !connected;
-  $('login-password').value = '';$('auth-error').hidden = true;$('auth-message').hidden = true;
-  $('auth-dialog').showModal();
-}
-['account-button','notice-action'].forEach(id=>$(id).addEventListener('click',openAuth));
-$('close-auth').addEventListener('click',()=>{if(!state.busy)$('auth-dialog').close();});
-$('auth-dialog').addEventListener('cancel',event=>{if(state.busy)event.preventDefault();});
-$('auth-dialog').addEventListener('close',()=>{$('login-password').value = '';});
-function setAuthBusy(value) {
-  setBusy(value);['login-submit','register-button','signout-button','close-auth'].forEach(id=>{$(id).disabled = value;});
-  $('login-submit').innerHTML = value ? '확인 중…' : '로그인'+icon('arrow-right');
-}
-const credentials = () => ({email:$('login-email').value.trim(),password:$('login-password').value});
-$('auth-form').addEventListener('submit',async event=>{
-  event.preventDefault();if(state.busy)return;
-  setAuthBusy(true);$('auth-error').hidden = true;
-  try {
-    const repository = await SubmissionRepository.connect(window.PYROOM_CONFIG,credentials());
-    const rows = await repository.list();
-    state.repository = repository;state.rows = rows;state.pending = repository.getPending();
-    notice('');$('auth-dialog').close();toast('로그인했어요. 이제 팀의 파일을 제출할 수 있습니다.');
-  } catch(error) {$('auth-error').textContent = readableError(error);$('auth-error').hidden = false;}
-  finally {setAuthBusy(false);render();}
-});
-$('register-button').addEventListener('click',async()=>{
-  if(state.busy || !$('auth-form').reportValidity())return;
-  setAuthBusy(true);$('auth-error').hidden = true;
-  try {
-    const result = await SubmissionRepository.register(window.PYROOM_CONFIG,credentials());
-    if(result.signedIn) {$('auth-dialog').close();await boot();toast(state.repository ? '계정을 만들고 로그인했어요.' : '계정을 만들었어요. 접근 권한을 확인해주세요.');}
-    else {$('auth-message').textContent = '확인 이메일을 보냈어요. 이메일의 링크를 누른 뒤 이 화면으로 돌아와 로그인해주세요.';$('auth-message').hidden = false;}
-  } catch(error) {$('auth-error').textContent = readableError(error);$('auth-error').hidden = false;}
-  finally {setAuthBusy(false);}
-});
-$('signout-button').addEventListener('click',async()=>{
-  if(state.busy || !state.repository)return;
-  setAuthBusy(true);
-  try {await state.repository.signOut();$('auth-dialog').close();state.file = null;$('file-input').value = '';await boot();toast('로그아웃했어요.');}
-  catch(error) {toast(readableError(error),true);}
-  finally {setAuthBusy(false);}
-});
-window.addEventListener('storage',event=>{if(/^sb-.*-auth-token$/.test(event.key || '') && !state.busy) {$('auth-dialog').close();boot();}});
-document.addEventListener('keydown',event=>{if(event.key === '/' && !event.metaKey && !event.ctrlKey && !event.altKey && !event.target.matches('input,textarea') && !$('auth-dialog').open) {event.preventDefault();$('search-input').focus();}});
+$('notice-action').addEventListener('click',()=>{if(!state.busy && !state.loading)boot();});
+document.addEventListener('keydown',event=>{if(event.key === '/' && !event.metaKey && !event.ctrlKey && !event.altKey && !event.target.matches('input,textarea')) {event.preventDefault();$('search-input').focus();}});
 boot();
