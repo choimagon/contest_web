@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f7f8fb">
-  <meta name="description" content="팀 이름과 Python 파일을 간편하게 제출하세요. 파일은 비공개로 보관하고 제출 목록에는 이름만 표시합니다.">
-  <title>Pyroom — 팀의 코드를 모으는 공간</title>
+  <meta name="theme-color" content="#eeece8">
+  <meta name="description" content="IMEL 팀 이름과 Python 파일 제출. 파일 원문은 비공개로 보관됩니다.">
+  <title>IMEL — 팀 파일 제출</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
   <script src="/config.js"></script>
@@ -13,17 +13,40 @@
 </head>
 <body>
   <a href="#upload-form" class="skip-link">제출 폼으로 이동</a>
-  <header class="header"><div class="header-inner"><a class="brand" href="/"><span class="brand-icon" data-icon="code-file"></span>pyroom<span>.</span></a><span class="header-label">TEAM SUBMISSIONS</span><div class="header-actions"><span class="status-pill" id="status-pill"><i></i>연결 중</span><span class="header-label">로그인 없이 제출</span></div></div></header>
+  <header class="header"><h1>IMEL</h1></header>
   <main>
-    <section class="hero"><div><p class="eyebrow"><span></span>A HOME FOR YOUR TEAM'S CODE</p><h1>팀의 코드를,<br><span>한곳에 모으세요.</span></h1><p class="hero-description">팀 이름과 Python 파일을 간편하게 제출하세요.<br>제출 목록에는 팀 이름과 파일명만 표시됩니다.</p></div><div class="hero-art" aria-hidden="true"><div class="art-dots"></div><div class="art-file"><div class="art-fold"></div><span class="art-code">{ }</span><span class="art-extension">.py</span><div class="art-lines"><i></i><i></i><i></i></div></div><span class="art-label"><span data-icon="check-circle"></span>READY TO SUBMIT</span><span class="art-spark">✳</span></div></section>
-    <section class="stats" aria-label="제출 현황"><div class="stat"><span class="stat-icon purple" data-icon="files"></span><div><span>전체 제출</span><strong id="total-submissions">0<small>개</small></strong></div></div><div class="stat"><span class="stat-icon green" data-icon="users"></span><div><span>등록된 팀</span><strong id="total-teams">0<small>팀</small></strong></div></div><div class="stat format-stat"><span class="stat-icon peach" data-icon="code"></span><div><span>제출 파일 형식</span><strong>.py<small>Python</small></strong></div><span class="private-tag"><span data-icon="lock"></span>비공개 보관</span></div></section>
-    <div id="connection-notice" class="notice" hidden><span data-icon="info"></span><span id="notice-text"></span><button id="notice-action">다시 시도</button></div>
+    <div class="reserved-area" aria-hidden="true"></div>
+    <div id="connection-notice" class="notice" role="status" hidden><span data-icon="info"></span><span id="notice-text"></span><button id="notice-action" type="button">다시 시도</button></div>
     <div class="workspace">
-      <section class="upload-card" aria-labelledby="upload-heading"><div class="card-heading"><span class="heading-icon" data-icon="upload"></span><div><h2 id="upload-heading">새로운 제출</h2><p>팀의 Python 파일을 등록해주세요.</p></div><span class="step-label">01 / UPLOAD</span></div><form id="upload-form"><label class="field-label" for="team-name">팀 이름 <span>*</span></label><input id="team-name" name="team_name" maxlength="80" required placeholder="예: 코드메이트" autocomplete="organization"><div class="file-field-heading"><label class="field-label" for="file-input">Python 파일 <span>*</span></label><span>.py · 최대 5 MB</span></div><div id="drop-zone" class="drop-zone"><input id="file-input" type="file" accept=".py" hidden><div id="file-placeholder"><span class="drop-icon" data-icon="code-file"></span><strong>파일을 여기에 놓아주세요</strong><p>또는 아래 버튼으로 선택하세요.</p><button class="button file-select" id="choose-file" type="button"><span data-icon="plus"></span>파일 선택</button></div><div id="selected-file" class="selected-file" hidden><span class="selected-file-icon" data-icon="code-file"></span><strong id="selected-file-name"></strong><span id="selected-file-size"></span><button type="button" class="text-button" id="change-file">다른 파일 선택</button><button type="button" class="icon-button remove-file" id="remove-file" aria-label="선택한 파일 제거" data-icon="x"></button></div></div><p class="upload-error" id="upload-error" role="alert" hidden></p><div class="upload-progress" id="upload-progress" hidden><span class="spinner"></span><span id="upload-progress-label">파일을 보관하는 중…</span></div><button class="button primary submit-button" id="submit-button" type="submit"><span data-icon="arrow-up-right"></span><span id="submit-label">제출하기</span></button><p class="upload-caption"><span data-icon="shield"></span>파일 원문은 비공개로 보관됩니다.</p></form><div id="pending-receipt" class="pending-receipt" hidden><strong>제출 상태를 확인해주세요</strong><p id="pending-description"></p><button class="button secondary" id="retry-submission">목록 등록 다시 시도<span data-icon="refresh"></span></button></div></section>
-      <section class="list-card" aria-labelledby="list-heading"><div class="list-heading"><div><h2 id="list-heading">제출 목록 <span id="list-count">0</span></h2><p>팀이 제출한 파일을 한눈에 확인하세요.</p></div><button class="icon-button" id="refresh-list" aria-label="제출 목록 새로고침" title="새로고침" data-icon="refresh"></button></div><label class="search-box"><span data-icon="search"></span><input id="search-input" type="search" aria-label="팀 이름 또는 파일명 검색" placeholder="팀 이름 또는 파일명 검색"><kbd>/</kbd></label><div class="table-container"><table><thead><tr><th scope="col">팀 이름</th><th scope="col">Python 파일</th><th scope="col">제출일</th></tr></thead><tbody id="submissions-body"></tbody></table><div class="empty-state" id="empty-state"><span data-icon="folder"></span><h3 id="empty-title">팀의 첫 번째 제출을 기다려요</h3><p id="empty-description">팀 이름과 .py 파일을 등록해보세요.</p></div></div><div class="list-footer"><span id="list-footer-count">총 0개 파일</span><span><i></i>파일명만 표시합니다</span></div></section>
+      <section class="upload-panel" aria-labelledby="upload-heading">
+        <h2 id="upload-heading">제출칸</h2>
+        <form id="upload-form">
+          <label class="field-label" for="team-name">팀 이름 <span>*</span></label>
+          <input id="team-name" name="team_name" maxlength="80" required placeholder="팀 이름 입력" autocomplete="organization">
+          <div class="file-field-heading"><label class="field-label" for="file-input">파일 이름 <span>*</span></label><span>.py · 최대 5 MB</span></div>
+          <div id="drop-zone" class="drop-zone">
+            <input id="file-input" type="file" accept=".py" hidden>
+            <div id="file-placeholder"><span class="drop-icon" data-icon="code-file"></span><p>.py 파일을 놓거나 선택하세요.</p><button class="button secondary" id="choose-file" type="button">파일 선택</button></div>
+            <div id="selected-file" class="selected-file" hidden><strong id="selected-file-name"></strong><span id="selected-file-size"></span><button type="button" class="text-button" id="change-file">다른 파일 선택</button><button type="button" class="icon-button remove-file" id="remove-file" aria-label="선택한 파일 제거" data-icon="x"></button></div>
+          </div>
+          <p class="upload-error" id="upload-error" role="alert" hidden></p>
+          <div class="upload-progress" id="upload-progress" role="status" hidden><span class="spinner"></span><span id="upload-progress-label">파일을 보관하는 중…</span></div>
+          <button class="button primary submit-button" id="submit-button" type="submit"><span id="submit-label">제출하기</span></button>
+          <p class="upload-caption">로그인 없이 제출 · 파일 원문 비공개</p>
+          <span class="status-pill" id="status-pill" role="status">연결 중</span>
+        </form>
+        <div id="pending-receipt" class="pending-receipt" hidden><strong>제출 상태를 확인해주세요</strong><p id="pending-description"></p><button class="button secondary" id="retry-submission" type="button">목록 등록 다시 시도</button></div>
+      </section>
+      <section class="list-panel" aria-labelledby="list-heading">
+        <h2 id="list-heading">제출목록 <span id="list-count">0</span></h2>
+        <div class="list-tools"><label class="search-box"><span data-icon="search"></span><input id="search-input" type="search" aria-label="팀 이름 또는 파일명 검색" placeholder="팀 이름 또는 파일명 검색"></label><button class="icon-button" id="refresh-list" type="button" aria-label="제출 목록 새로고침" title="새로고침" data-icon="refresh"></button></div>
+        <div class="table-container">
+          <table><thead><tr><th scope="col">팀 이름</th><th scope="col">파일 이름</th><th scope="col" title="한국 시간 (UTC+9)">시간<span class="column-detail">(초까지)</span></th><th scope="col">결과</th></tr></thead><tbody id="submissions-body"></tbody></table>
+          <div class="empty-state" id="empty-state"><h3 id="empty-title">아직 제출된 파일이 없습니다.</h3><p id="empty-description">팀 이름과 .py 파일을 제출해주세요.</p></div>
+        </div>
+        <div class="list-footer"><span id="list-footer-count">총 0개 파일</span><span>시간은 한국 시간 기준</span></div>
+      </section>
     </div>
-    <div class="privacy-note"><span data-icon="lock"></span><div><strong>코드의 내용은 이곳에서 열리지 않아요.</strong><p>파일을 읽거나 실행하지 않습니다. 제출 목록에서는 파일이 등록되었다는 사실과 이름만 확인할 수 있어요.</p></div><span class="privacy-extension">.py</span></div>
-    <footer><span class="footer-brand">pyroom<span>.</span></span><span>A little space for your team's next big idea.</span><span>Built for teams <span>✳</span></span></footer>
   </main>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden><span data-icon="check-circle"></span><span id="toast-message"></span></div>
   <noscript><p class="noscript">파일 제출을 사용하려면 JavaScript를 활성화해주세요.</p></noscript>
